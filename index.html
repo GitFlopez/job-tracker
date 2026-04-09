@@ -1,0 +1,2908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frank's Job Tracker v1.4.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // Configure PDF.js worker
+        if (typeof pdfjsLib !== 'undefined') {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        }
+    </script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 24px;
+        }
+        
+        header {
+            border-bottom: 2px solid #e5e5e5;
+            padding-bottom: 16px;
+            margin-bottom: 24px;
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        
+        h3 {
+            font-size: 16px;
+            color: #1a1a1a;
+            margin: 24px 0 12px 0;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .stat strong {
+            color: #1a1a1a;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #e5e5e5;
+        }
+        
+        .tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-weight: 500;
+            color: #666;
+        }
+        
+        .tab:hover {
+            background: #f5f5f5;
+        }
+        
+        .tab.active {
+            color: #0066cc;
+            border-bottom-color: #0066cc;
+            background: transparent;
+        }
+        
+        .page {
+            display: none;
+        }
+        
+        .page.active {
+            display: block;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: 1px solid #d1d1d1;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+        
+        button.primary {
+            background: #0066cc;
+            color: white;
+            border-color: #0066cc;
+        }
+        
+        button.primary:hover {
+            background: #0052a3;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        select, input {
+            padding: 8px 12px;
+            border: 1px solid #d1d1d1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+        
+        thead {
+            background: #f9f9f9;
+            position: sticky;
+            top: 0;
+        }
+        
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #666;
+            border-bottom: 2px solid #e5e5e5;
+        }
+        
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        tr:hover {
+            background: #f9f9f9;
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge.applied {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge.healthcare {
+            background: #e7f3ff;
+            color: #004085;
+        }
+        
+        .badge.banking {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge.gaming {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .tier-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .tier-1 {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .tier-2 {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .tier-3 {
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        .status-skip {
+            background: #f0f0f0;
+            color: #666;
+        }
+        
+        .status-apply {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-hold {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-backburner {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .status-research {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .company-name {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        .salary {
+            color: #0066cc;
+            font-weight: 500;
+        }
+        
+        a {
+            color: #0066cc;
+            text-decoration: none;
+        }
+        
+        a:hover {
+            text-decoration: underline;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+        }
+        
+        .modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 24px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        input[type="text"],
+        input[type="url"],
+        input[type="date"],
+        textarea {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d1d1;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        
+        .notes-preview {
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .search-log-header {
+            background: #f9f9f9;
+            padding: 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .search-log-header h2 {
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .search-log-header p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .qualifier-select {
+            padding: 6px 10px;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+            font-size: 13px;
+            background: white;
+        }
+        
+        .star-rating {
+            color: #ffc107;
+            font-size: 16px;
+        }
+        
+        .outcome-awaiting {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .outcome-interview {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .outcome-declined {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .status-custom-input {
+            width: 120px;
+            padding: 4px 8px;
+            border: 1px solid #d1d1d1;
+            border-radius: 4px;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+    </style>
+<!-- MAX_BOOTSTRAP_START -->
+<script>
+// Auto-injected by Max scraper — 2026-04-09T22:01:03.530Z
+(function() {
+  var data = {"frankSearchLog":"[{\"date\":\"2026-04-09T22:01:03.511Z\",\"source\":\"Auto-Scraper\",\"results\":1,\"notes\":\"Added 1 pre-screened jobs\"}]","frankJobLeads":"[{\"id\":\"job_1775772062599_qluvnvcp3\",\"date\":\"2026-04-09\",\"company\":\"ShipMonk\",\"title\":\"IT Operations Manager\",\"source\":\"LinkedIn\",\"rating\":1,\"salary\":\"Not Listed\",\"status\":\"Review\",\"outcome\":\"\",\"notes\":\"Location: North Las Vegas, NV\\nBe an early applicant\\n2 hours ago\\nFit Score: 38\\nURL: https://www.linkedin.com/jobs/view/it-operations-manager-at-shipmonk-4397616327?position=1&pageNum=0&refId=93LKGTFHLuyKW0HeKE%2Fe1Q%3D%3D&trackingId=iGMQIELMIH4eyxcz7hn30Q%3D%3D\",\"recommendations\":\"Tier 7 opportunity.\\nReview JD carefully - may require skill gaps or culture mismatch.\",\"posted\":\"2026-04-09\",\"url\":\"https://www.linkedin.com/jobs/view/it-operations-manager-at-shipmonk-4397616327?position=1&pageNum=0&refId=93LKGTFHLuyKW0HeKE%2Fe1Q%3D%3D&trackingId=iGMQIELMIH4eyxcz7hn30Q%3D%3D\",\"tier\":7,\"fitScore\":38,\"selected\":false,\"qualifier\":\"Research Needed\",\"customStatus\":\"\"}]"};
+  Object.entries(data).forEach(function(e) { localStorage.setItem(e[0], e[1]); });
+})();
+</script>
+<!-- MAX_BOOTSTRAP_END -->
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Job Search Tracker</h1>
+            <div class="stats">
+                <div class="stat"><strong id="totalJobs">0</strong> Total</div>
+                <div class="stat"><strong id="appliedJobs">0</strong> Applied</div>
+                <div class="stat"><strong id="pendingJobs">0</strong> Pending</div>
+                <button onclick="openHelpModal()" style="margin-left: 20px; padding: 8px 16px;">❓ How to Use</button>
+            </div>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('tracker')">Active Tracker</button>
+            <button class="tab" onclick="switchTab('leads')">Job Leads</button>
+            <button class="tab" onclick="switchTab('inbox')">JD Inbox</button>
+            <button class="tab" onclick="switchTab('archive')">Archive</button>
+            <button class="tab" onclick="switchTab('settings')">Settings</button>
+        </div>
+        
+        <!-- Active Tracker Page -->
+        <div id="trackerPage" class="page active">
+            <div class="controls">
+                <button class="primary" onclick="openAddModal()">+ Add Job</button>
+                <button onclick="exportData()">Export CSV</button>
+                <button onclick="archiveSelectedTracker()">Move to Archive</button>
+            </div>
+            
+            <div class="filters">
+                <select id="industryFilter" onchange="filterJobs()">
+                    <option value="">All Industries</option>
+                    <option value="Healthcare">Healthcare</option>
+                    <option value="Banking">Banking</option>
+                    <option value="Gaming">Gaming</option>
+                    <option value="Datacenter">Datacenter</option>
+                    <option value="Utilities">Utilities</option>
+                    <option value="Hospitality">Hospitality</option>
+                </select>
+                
+                <select id="statusFilter" onchange="filterJobs()">
+                    <option value="">All Status</option>
+                    <option value="applied">Applied</option>
+                    <option value="pending">Pending</option>
+                </select>
+                
+                <input type="text" id="searchBox" placeholder="Search companies, titles..." oninput="filterJobs()">
+            </div>
+            
+            <div id="tableContainer">
+                <table id="jobsTable">
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllTracker" onchange="toggleSelectAllTracker()"></th>
+                            <th>Date</th>
+                            <th>Company</th>
+                            <th>Title</th>
+                            <th>Source</th>
+                            <th>Rating</th>
+                            <th>Salary</th>
+                            <th>Status</th>
+                            <th>Outcome</th>
+                            <th>Notes</th>
+                            <th>Recommendations</th>
+                            <th>Posted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="jobsBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Job Leads Page -->
+        <div id="leadsPage" class="page">
+            <div class="search-log-header">
+                <h2>Job Leads (High-Match Positions)</h2>
+                <p>Tier 1 positions: Salary ≥$110K + Target Industry (Datacenter/Gaming/Healthcare)</p>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <button onclick="exportLeadsCSV()">Export to CSV</button>
+                <button onclick="moveLeadsToTracker()">Move to Tracker</button>
+                <button onclick="moveLeadsToArchive()">Move to Archive</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllLeads" onchange="toggleSelectAllLeads()"></th>
+                        <th>Date</th>
+                        <th>Company</th>
+                        <th>Title</th>
+                        <th>Source</th>
+                        <th>Rating</th>
+                        <th>Salary</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th>Recommendations</th>
+                        <th>Posted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="leadsBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- JD Inbox Page -->
+        <div id="inboxPage" class="page">
+            <div class="search-log-header">
+                <h2>JD Inbox (Paste & Analyze)</h2>
+                <p>Paste job descriptions for automatic scoring and routing</p>
+            </div>
+            
+            <div style="margin-bottom: 16px; display: flex; align-items: end; gap: 12px;">
+                <div>
+                    <label style="display: block; margin-bottom: 6px;">Source</label>
+                    <select id="jdSource" onchange="showBatchArea()" style="padding: 8px;">
+                        <option value="">Select job board...</option>
+                        <option value="LinkedIn">LinkedIn</option>
+                        <option value="Indeed">Indeed</option>
+                        <option value="Dice">Dice</option>
+                        <option value="ZipRecruiter">ZipRecruiter</option>
+                        <option value="HiringCafe">HiringCafe</option>
+                        <option value="Company Site">Company Site</option>
+                    </select>
+                </div>
+                <button class="primary" onclick="openManualEntryModal()" style="padding: 8px 16px;">✍️ Manual Entry</button>
+                <button class="primary" onclick="openPDFUploadModal()" style="padding: 8px 16px;">📄 Upload PDF</button>
+                <button class="primary" onclick="openImageUploadModal()" style="padding: 8px 16px;">📷 Upload Image</button>
+            </div>
+            
+            <div id="companySiteInput" style="display: none; margin-bottom: 16px;">
+                <label>Company Name</label>
+                <input type="text" id="manualCompanyName" placeholder="Enter company name">
+            </div>
+            
+            <div id="batchPasteArea" style="display: none;">
+                <div style="margin-bottom: 12px;">
+                    <label>Paste JDs (CTRL+V repeatedly)</label>
+                    <textarea id="batchPasteBox" placeholder="Paste job description..." style="min-height: 300px; width: 100%; font-family: monospace; font-size: 13px;"></textarea>
+                </div>
+                <div style="margin-bottom: 12px;">
+                    <label>Notes (optional)</label>
+                    <textarea id="batchNotes" placeholder="Questions or notes..." style="min-height: 60px; width: 100%;"></textarea>
+                </div>
+                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 16px;">
+                    <button class="primary" onclick="addToBatch()">Add to Queue</button>
+                    <span id="queueCounter" style="color: #666; font-size: 14px;">0 JDs queued</span>
+                </div>
+                <button class="primary" onclick="analyzeBatch()" style="width: 100%; padding: 12px; font-size: 16px;">Analyze Batch</button>
+            </div>
+            
+            <div id="errorReport" style="display: none; background: #fff3cd; border: 1px solid #ffc107; padding: 16px; border-radius: 6px; margin: 20px 0;">
+                <h3 style="margin-bottom: 8px; color: #856404;">Analysis Errors</h3>
+                <div id="errorList"></div>
+            </div>
+            
+            <div style="display: flex; gap: 12px; margin: 20px 0;">
+                <button onclick="promoteSelected()">Move to Leads</button>
+                <button onclick="archiveSelectedInbox()">Move to Archive</button>
+                <button onclick="exportInboxCSV()">Export to CSV</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllInbox" onchange="toggleSelectAllInbox()"></th>
+                        <th>Date</th>
+                        <th>Company</th>
+                        <th>Title</th>
+                        <th>Source</th>
+                        <th>Rating</th>
+                        <th>Salary</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th>Recommendations</th>
+                        <th>Posted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="inboxBody">
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Archive Page -->
+        <div id="archivePage" class="page">
+            <div class="search-log-header">
+                <h2>Archive</h2>
+                <p>JDs older than 30 days</p>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <button onclick="importArchiveCSV()">Import CSV</button>
+                <button onclick="exportArchiveCSV()">Export to CSV</button>
+                <button onclick="moveArchiveToInbox()">Move to Inbox</button>
+                <button onclick="moveArchiveToLeads()">Move to Leads</button>
+                <button onclick="moveArchiveToTracker()">Move to Tracker</button>
+            </div>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAllArchive" onchange="toggleSelectAllArchive()"></th>
+                        <th>Date</th>
+                        <th>Company</th>
+                        <th>Title</th>
+                        <th>Source</th>
+                        <th>Rating</th>
+                        <th>Salary</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th>Recommendations</th>
+                        <th>Posted</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="archiveBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Edit JD Modal -->
+    <div id="editJDModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit JD Entry</h2>
+            <div class="form-group">
+                <label>Company Name</label>
+                <input type="text" id="editCompany">
+            </div>
+            <div class="form-group">
+                <label>Job Title</label>
+                <input type="text" id="editTitle">
+            </div>
+            <div class="form-group">
+                <label>Salary</label>
+                <input type="text" id="editSalary" placeholder="e.g. $110K-$140K">
+            </div>
+            <div class="form-group">
+                <label>Rating (1-5 stars)</label>
+                <select id="editRating">
+                    <option value="1">1 Star</option>
+                    <option value="2">2 Stars</option>
+                    <option value="3">3 Stars</option>
+                    <option value="4">4 Stars</option>
+                    <option value="5">5 Stars</option>
+                </select>
+            </div>
+            <div class="form-actions">
+                <button type="button" onclick="closeEditJDModal()">Cancel</button>
+                <button type="button" class="primary" onclick="saveEditJD()">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Page -->
+    <div class="container">
+        <div id="settingsPage" class="page">
+            <div class="search-log-header">
+                <h2>Settings</h2>
+                <p>Configure your job search preferences</p>
+            </div>
+            
+            <!-- API Settings Button -->
+            <div style="margin-bottom: 24px; display: flex; gap: 12px;">
+                <button class="primary" onclick="openSystemModal()" style="padding: 10px 20px;">
+                    🔧 System Settings
+                </button>
+                <button class="primary" onclick="openAPIModal()" style="padding: 10px 20px;">
+                    ⚙️ API Configuration
+                </button>
+            </div>
+            
+            <!-- Configuration Type Selector -->
+            <div style="margin-bottom: 24px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Select Configuration Type</label>
+                <select id="configTypeSelector" style="padding: 8px; width: 300px;">
+                    <option value="">Choose a configuration type...</option>
+                    <option value="industry">Industry Rankings</option>
+                    <option value="company">Company Rankings</option>
+                    <option value="salary">Salary Thresholds</option>
+                    <option value="location">Location Preferences</option>
+                    <option value="skills">Skills & Tech Stack</option>
+                    <option value="keywords">Keywords & Flags</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <!-- Industry Rankings Section (Hidden by default) -->
+            <div id="industryRankingsSection" style="display: none;">
+                <h3>Industry Rankings</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Rank industries by priority (1-10, 1 = Highest Priority)</p>
+                
+                <div id="industryList">
+                    <div style="display: grid; grid-template-columns: 3fr 1fr 60px; gap: 12px; margin-bottom: 12px; align-items: center;">
+                        <input type="text" placeholder="Industry name (e.g., Datacenter)" style="padding: 8px;">
+                        <input type="number" placeholder="Rank" min="1" max="10" style="padding: 8px;">
+                        <button style="padding: 8px;">✕</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 3fr 1fr 60px; gap: 12px; margin-bottom: 12px; align-items: center;">
+                        <input type="text" placeholder="Industry name" style="padding: 8px;">
+                        <input type="number" placeholder="Rank" min="1" max="10" style="padding: 8px;">
+                        <button style="padding: 8px;">✕</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 3fr 1fr 60px; gap: 12px; margin-bottom: 12px; align-items: center;">
+                        <input type="text" placeholder="Industry name" style="padding: 8px;">
+                        <input type="number" placeholder="Rank" min="1" max="10" style="padding: 8px;">
+                        <button style="padding: 8px;">✕</button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
+                    <button style="padding: 10px 20px;">Add Industry</button>
+                    <button class="primary" style="padding: 10px 20px;">Save Settings</button>
+                    <button style="padding: 10px 20px;">Clear</button>
+                    <button style="padding: 10px 20px;">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Company Rankings Section (Hidden by default) -->
+            <div id="companyRankingsSection" style="display: none;">
+                <h3>Company Rankings</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 16px;">Add companies and rank them within each industry</p>
+                
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; margin-bottom: 8px;">Select Industry</label>
+                    <select style="padding: 8px; width: 300px;">
+                        <option value="">Choose an industry...</option>
+                    </select>
+                </div>
+                
+                <div id="companyList">
+                    <div style="display: grid; grid-template-columns: 3fr 1fr 60px; gap: 12px; margin-bottom: 12px; align-items: center;">
+                        <input type="text" placeholder="Company name (e.g., Switch)" style="padding: 8px;">
+                        <input type="number" placeholder="Priority" min="1" max="10" style="padding: 8px;">
+                        <button style="padding: 8px;">✕</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 3fr 1fr 60px; gap: 12px; margin-bottom: 12px; align-items: center;">
+                        <input type="text" placeholder="Company name" style="padding: 8px;">
+                        <input type="number" placeholder="Priority" min="1" max="10" style="padding: 8px;">
+                        <button style="padding: 8px;">✕</button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 3fr 1fr 60px; gap: 12px; margin-bottom: 12px; align-items: center;">
+                        <input type="text" placeholder="Company name" style="padding: 8px;">
+                        <input type="number" placeholder="Priority" min="1" max="10" style="padding: 8px;">
+                        <button style="padding: 8px;">✕</button>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
+                    <button style="padding: 10px 20px;">Add Company</button>
+                    <button class="primary" style="padding: 10px 20px;">Save Settings</button>
+                    <button style="padding: 10px 20px;">Clear</button>
+                    <button style="padding: 10px 20px;">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Salary Thresholds Section (Hidden by default) -->
+            <div id="salarySection" style="display: none;">
+                <h3>💰 Salary Thresholds</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Define your salary requirements and preferences</p>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 600px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 6px;">Minimum Acceptable</label>
+                        <input type="text" placeholder="e.g., $110,000" style="padding: 8px; width: 100%;">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 6px;">Ideal Range</label>
+                        <input type="text" placeholder="e.g., $130K-$150K" style="padding: 8px; width: 100%;">
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
+                    <button class="primary" style="padding: 10px 20px;">Save Settings</button>
+                    <button style="padding: 10px 20px;">Clear</button>
+                    <button style="padding: 10px 20px;">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Location Preferences Section (Hidden by default) -->
+            <div id="locationSection" style="display: none;">
+                <h3>📍 Location Preferences</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Define your work location requirements</p>
+                
+                <div style="margin-bottom: 20px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <div style="margin-bottom: 16px;">
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Preferred Work Arrangement</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="workLocation" value="remote">
+                                <span>Remote only</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="workLocation" value="hybrid">
+                                <span>Hybrid (willing to go to office occasionally)</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="radio" name="workLocation" value="onsite">
+                                <span>On-site acceptable</span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 8px; font-weight: 500;">Location Dealbreakers</label>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox">
+                                <span>Auto-skip if requires office 5 days/week</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox">
+                                <span>Auto-skip if no remote option</span>
+                            </label>
+                            <label style="display: flex; align-items: center; gap: 8px;">
+                                <input type="checkbox">
+                                <span>Auto-skip if relocation required</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
+                    <button class="primary" style="padding: 10px 20px;">Save Settings</button>
+                    <button style="padding: 10px 20px;">Clear</button>
+                    <button style="padding: 10px 20px;">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Skills & Tech Stack Section (Hidden by default) -->
+            <div id="skillsSection" style="display: none;">
+                <h3>🛠️ Skills & Tech Stack</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Add your technical skills (can be auto-filled from resume)</p>
+                
+                <div style="padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 500;">Your Skills & Technologies</label>
+                        <textarea placeholder="e.g., VMware, Windows Server, Cisco, AWS, Python, PowerShell..." style="padding: 8px; width: 100%; max-width: 600px; min-height: 120px;"></textarea>
+                        <p style="color: #666; font-size: 12px; margin-top: 6px;">
+                            💡 List all technologies you have experience with (comma-separated or one per line)
+                        </p>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 6px; font-weight: 500;">Dealbreaker Technologies</label>
+                        <input type="text" placeholder="e.g., Salesforce, SAP, Mainframe" style="padding: 8px; width: 100%; max-width: 600px;">
+                        <p style="color: #666; font-size: 12px; margin-top: 6px;">Auto-skip JDs requiring these technologies (comma-separated)</p>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
+                    <button class="primary" style="padding: 10px 20px;">Save Settings</button>
+                    <button style="padding: 10px 20px;">Clear</button>
+                    <button style="padding: 10px 20px;">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Keywords & Flags Section (Hidden by default) -->
+            <div id="keywordsSection" style="display: none;">
+                <h3>🚩 Keywords & Flags</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Configure culture indicators and scoring weights</p>
+                
+                <!-- Red/Green Flags -->
+                <div style="margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <h4 style="margin-bottom: 12px;">Culture Indicators</h4>
+                    
+                    <div style="margin-bottom: 20px;">
+                        <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #dc3545;">🔴 Red Flags (Auto-downgrade rating)</label>
+                        <textarea placeholder="e.g., fast-paced startup, wear many hats, hit the ground running" style="padding: 8px; width: 100%; max-width: 600px; min-height: 80px;"></textarea>
+                        <p style="color: #666; font-size: 12px; margin-top: 6px;">One phrase per line or comma-separated</p>
+                    </div>
+                    
+                    <div>
+                        <label style="display: block; margin-bottom: 6px; font-weight: 500; color: #28a745;">🟢 Green Flags (Boost rating)</label>
+                        <textarea placeholder="e.g., work-life balance, mentorship program, professional development" style="padding: 8px; width: 100%; max-width: 600px; min-height: 80px;"></textarea>
+                        <p style="color: #666; font-size: 12px; margin-top: 6px;">One phrase per line or comma-separated</p>
+                    </div>
+                </div>
+                
+                <!-- Custom Scoring Weights -->
+                <div style="margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <h4 style="margin-bottom: 12px;">⚖️ Custom Scoring Weights</h4>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 16px;">Adjust how much each factor affects the final star rating (1-10)</p>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 16px; max-width: 600px;">
+                        <div>
+                            <label style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span>Industry Match</span>
+                                <span id="industryWeight2" style="font-weight: bold;">5</span>
+                            </label>
+                            <input type="range" min="1" max="10" value="5" oninput="document.getElementById('industryWeight2').textContent = this.value" style="width: 100%;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span>Salary Match</span>
+                                <span id="salaryWeight2" style="font-weight: bold;">5</span>
+                            </label>
+                            <input type="range" min="1" max="10" value="5" oninput="document.getElementById('salaryWeight2').textContent = this.value" style="width: 100%;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span>Tech Stack Match</span>
+                                <span id="techWeight2" style="font-weight: bold;">5</span>
+                            </label>
+                            <input type="range" min="1" max="10" value="5" oninput="document.getElementById('techWeight2').textContent = this.value" style="width: 100%;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span>Company Reputation</span>
+                                <span id="companyWeight2" style="font-weight: bold;">5</span>
+                            </label>
+                            <input type="range" min="1" max="10" value="5" oninput="document.getElementById('companyWeight2').textContent = this.value" style="width: 100%;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span>Remote Flexibility</span>
+                                <span id="remoteWeight2" style="font-weight: bold;">5</span>
+                            </label>
+                            <input type="range" min="1" max="10" value="5" oninput="document.getElementById('remoteWeight2').textContent = this.value" style="width: 100%;">
+                        </div>
+                        
+                        <div>
+                            <label style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                <span>Growth Opportunity</span>
+                                <span id="growthWeight2" style="font-weight: bold;">5</span>
+                            </label>
+                            <input type="range" min="1" max="10" value="5" oninput="document.getElementById('growthWeight2').textContent = this.value" style="width: 100%;">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Deal-Breakers -->
+                <div style="margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <h4 style="margin-bottom: 12px;">⛔ Deal-Breakers</h4>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 12px;">Automatically flag JDs with these characteristics</p>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 600px;">
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox">
+                            <span>Contract/Hourly</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox">
+                            <span>Clearance Required</span>
+                        </label>
+                        <label style="display: flex; align-items: center; gap: 8px;">
+                            <input type="checkbox">
+                            <span>Relocation Required</span>
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Custom Keywords -->
+                <div style="margin-bottom: 30px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <h4 style="margin-bottom: 12px;">🔍 Custom Keywords to Flag</h4>
+                    <p style="color: #666; font-size: 13px; margin-bottom: 12px;">Add keywords that should trigger alerts (comma-separated)</p>
+                    <textarea placeholder="e.g., on-call, travel, weekend shifts" style="padding: 8px; width: 100%; max-width: 600px; min-height: 80px;"></textarea>
+                </div>
+                
+                <div style="display: flex; gap: 12px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #e5e5e5;">
+                    <button class="primary" style="padding: 10px 20px;">Save Settings</button>
+                    <button style="padding: 10px 20px;">Clear</button>
+                    <button style="padding: 10px 20px;">Cancel</button>
+                </div>
+            </div>
+            
+            <!-- Other Section (Hidden by default) -->
+            <div id="otherSection" style="display: none;">
+                <h3>Other Settings</h3>
+                <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Additional configuration options</p>
+                
+                <div style="padding: 40px; text-align: center; color: #999;">
+                    <p style="font-size: 48px; margin-bottom: 16px;">🚧</p>
+                    <p style="font-size: 16px;">More settings coming soon!</p>
+                    <p style="font-size: 14px; margin-top: 8px;">Check the other configuration types above for available options.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- System Settings Modal -->
+    <div id="systemModal" class="modal">
+        <div class="modal-content">
+            <h2>🔧 System Settings</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Configure system-level preferences</p>
+            
+            <!-- Language Selection -->
+            <div style="margin-bottom: 24px; padding: 16px; background: #f9f9f9; border-radius: 6px;">
+                <h4 style="margin-bottom: 12px;">🌍 Language / Idioma</h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="language" value="en" checked>
+                        <span>English</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="radio" name="language" value="es">
+                        <span>Español (Spanish)</span>
+                    </label>
+                </div>
+                <p style="color: #666; font-size: 12px; margin-top: 8px;">
+                    💡 Phase 1: UI translation coming soon
+                </p>
+            </div>
+            
+            <!-- Auto-Archive Settings -->
+            <div style="margin-bottom: 24px; padding: 16px; background: #f9f9f9; border-radius: 6px;">
+                <h4 style="margin-bottom: 12px;">📦 Auto-Archive</h4>
+                <div style="max-width: 300px;">
+                    <label style="display: block; margin-bottom: 6px;">Archive JDs older than (days)</label>
+                    <input type="number" id="autoArchiveDays" placeholder="30" min="1" value="30" style="padding: 8px; width: 100%;">
+                    <p style="color: #666; font-size: 12px; margin-top: 6px;">
+                        Automatically move old JDs to Archive tab
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Data Management -->
+            <div style="margin-bottom: 24px; padding: 16px; background: #f9f9f9; border-radius: 6px;">
+                <h4 style="margin-bottom: 12px;">💾 Data Management</h4>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <button onclick="exportAllData()" style="padding: 8px 16px; text-align: left;">
+                        📥 Export All Data (JSON)
+                    </button>
+                    <button onclick="importDataPrompt()" style="padding: 8px 16px; text-align: left;">
+                        📤 Import Data (JSON)
+                    </button>
+                    <button onclick="confirmClearAll()" style="padding: 8px 16px; text-align: left; color: #dc3545;">
+                        🗑️ Clear All Data
+                    </button>
+                </div>
+            </div>
+            
+            <!-- App Info -->
+            <div style="padding: 16px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 13px;">
+                    <strong>Version:</strong> 1.4.0<br>
+                    <strong>Storage:</strong> Local Browser (localStorage)<br>
+                    <strong>Last Updated:</strong> Feb 21, 2026
+                </p>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" onclick="closeSystemModal()">Cancel</button>
+                <button type="button" class="primary" onclick="saveSystemSettings()">Save Settings</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- API Configuration Modal -->
+    <div id="apiModal" class="modal">
+        <div class="modal-content">
+            <h2>API Configuration</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">
+                Choose your preferred AI provider for JD analysis
+            </p>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Select AI Provider</label>
+                <select id="aiProvider" onchange="updateProviderInfo()" style="padding: 8px; width: 100%;">
+                    <option value="claude">Claude (Anthropic)</option>
+                    <option value="gpt4">GPT-4 (OpenAI)</option>
+                    <option value="gemini">Gemini (Google)</option>
+                    <option value="grok">Grok (xAI)</option>
+                    <option value="ollama">Local Model (Ollama)</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+                    <input type="checkbox" id="enableAI">
+                    <span style="font-weight: 500;">Enable AI Analysis</span>
+                </label>
+                <p style="color: #666; font-size: 12px; margin-left: 28px;">When disabled, uses basic keyword matching (free)</p>
+            </div>
+            
+            <div id="apiKeySection" style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">API Key</label>
+                <input type="password" id="apiKey" placeholder="Enter your API key..." style="padding: 8px; width: 100%; font-family: monospace;">
+                <p style="color: #666; font-size: 12px; margin-top: 6px;">
+                    🔒 Your API key is stored locally in your browser only. Never shared.
+                </p>
+            </div>
+            
+            <!-- Provider Info Box -->
+            <div id="providerInfoBox" style="padding: 16px; background: #f0f7ff; border-left: 4px solid #0066cc; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0 0 8px 0; font-size: 13px;">
+                    <strong>Get your API key:</strong> 
+                    <a id="providerLink" href="https://console.anthropic.com/" target="_blank" style="color: #0066cc;">console.anthropic.com</a>
+                </p>
+                <p id="costInfo" style="margin: 0; font-size: 13px; color: #666;">
+                    💰 Cost: ~$0.30/month for 200 JDs • $5 free credits
+                </p>
+            </div>
+            
+            <!-- Cost Disclaimer -->
+            <div style="padding: 12px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 12px; color: #856404;">
+                    <strong>Note:</strong> Costs are estimates based on typical usage. See provider pricing for details:
+                </p>
+                <p style="margin: 8px 0 0 0; font-size: 12px;">
+                    <a href="https://www.anthropic.com/pricing" target="_blank" style="color: #856404; text-decoration: underline;">Anthropic</a> • 
+                    <a href="https://openai.com/pricing" target="_blank" style="color: #856404; text-decoration: underline;">OpenAI</a> • 
+                    <a href="https://ai.google.dev/pricing" target="_blank" style="color: #856404; text-decoration: underline;">Google</a> • 
+                    <a href="https://x.ai/api" target="_blank" style="color: #856404; text-decoration: underline;">xAI</a> • 
+                    <a href="https://ollama.ai/" target="_blank" style="color: #856404; text-decoration: underline;">Ollama</a>
+                </p>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" onclick="closeAPIModal()">Cancel</button>
+                <button type="button" class="primary" onclick="saveAPISettings()">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Image Upload Modal -->
+    <div id="imageUploadModal" class="modal">
+        <div class="modal-content">
+            <h2>📷 Upload Job Description Image</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Coming soon: Upload screenshots of job postings for automatic text extraction</p>
+            
+            <div style="padding: 40px; text-align: center; background: #f9f9f9; border-radius: 8px; margin-bottom: 20px;">
+                <p style="font-size: 48px; margin-bottom: 16px;">🚧</p>
+                <p style="font-size: 16px; margin-bottom: 12px;">Image OCR Feature in Development</p>
+                <p style="font-size: 14px; color: #666;">This feature will allow you to:</p>
+                <ul style="text-align: left; max-width: 400px; margin: 16px auto; color: #666;">
+                    <li>Upload screenshots from LinkedIn, Indeed, etc.</li>
+                    <li>Drag & drop job posting images</li>
+                    <li>Automatic text extraction using AI/OCR</li>
+                    <li>Same analysis as text-based JDs</li>
+                </ul>
+            </div>
+            
+            <div style="padding: 16px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 13px; color: #856404;">
+                    <strong>For now:</strong> Please copy and paste the text from job postings into the JD Inbox text area above.
+                </p>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="primary" onclick="closeImageUploadModal()">Got it!</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Manual Entry Modal -->
+    <div id="manualEntryModal" class="modal">
+        <div class="modal-content">
+            <h2>✍️ Manual Job Entry</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Enter job details manually</p>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Company Name *</label>
+                <input type="text" id="manualCompany" placeholder="e.g., Caesars Entertainment" style="padding: 8px; width: 100%;">
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Job Title *</label>
+                <input type="text" id="manualTitle" placeholder="e.g., IT Manager" style="padding: 8px; width: 100%;">
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Source</label>
+                <select id="manualSource" style="padding: 8px; width: 100%;">
+                    <option value="">Select source...</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                    <option value="Indeed">Indeed</option>
+                    <option value="Dice">Dice</option>
+                    <option value="ZipRecruiter">ZipRecruiter</option>
+                    <option value="HiringCafe">HiringCafe</option>
+                    <option value="Company Site">Company Site</option>
+                    <option value="Referral">Referral</option>
+                    <option value="Recruiter">Recruiter</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Job Description</label>
+                <textarea id="manualJD" placeholder="Paste or type job description..." style="padding: 8px; width: 100%; min-height: 200px;"></textarea>
+            </div>
+            
+            <div style="margin-bottom: 16px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Notes (Optional)</label>
+                <textarea id="manualNotes" placeholder="Your notes..." style="padding: 8px; width: 100%; min-height: 80px;"></textarea>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" onclick="closeManualEntryModal()">Cancel</button>
+                <button type="button" class="primary" onclick="saveManualEntry()">Add to Inbox</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- PDF Upload Modal -->
+    <div id="pdfUploadModal" class="modal">
+        <div class="modal-content">
+            <h2>📄 Upload Job Description PDF</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Upload a PDF file to extract job description text</p>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 6px; font-weight: 500;">Source</label>
+                <select id="pdfSource" style="padding: 8px; width: 100%;">
+                    <option value="">Select source...</option>
+                    <option value="LinkedIn">LinkedIn</option>
+                    <option value="Indeed">Indeed</option>
+                    <option value="Dice">Dice</option>
+                    <option value="ZipRecruiter">ZipRecruiter</option>
+                    <option value="HiringCafe">HiringCafe</option>
+                    <option value="Company Site">Company Site</option>
+                </select>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="display: block; margin-bottom: 8px; font-weight: 500;">Select PDF File</label>
+                <input type="file" id="pdfFileInput" accept=".pdf" style="padding: 8px; width: 100%;">
+            </div>
+            
+            <div id="pdfProcessingStatus" style="display: none; margin-bottom: 20px; padding: 12px; background: #f0f7ff; border-radius: 4px;">
+                <p style="margin: 0; color: #0066cc;">📄 Processing PDF...</p>
+            </div>
+            
+            <div style="padding: 16px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 13px; color: #856404;">
+                    <strong>💡 Tip:</strong> Works best with text-based PDFs (LinkedIn, Indeed downloads). Scanned PDFs may require OCR.
+                </p>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" onclick="closePDFUploadModal()">Cancel</button>
+                <button type="button" class="primary" onclick="processPDFUpload()">Upload & Analyze</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Help Modal -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <h2>📋 How to Use the Job Tracker</h2>
+            <p style="color: #666; font-size: 14px; margin-bottom: 20px;">Quick guide to get you started</p>
+            
+            <div style="margin-bottom: 24px;">
+                <h3 style="margin-bottom: 12px;">🚀 Quick Start</h3>
+                <ol style="line-height: 1.8; padding-left: 20px;">
+                    <li><strong>JD Inbox:</strong> Select source → Paste job descriptions → Click "Analyze Batch" for AI scoring</li>
+                    <li><strong>Job Leads:</strong> High-match positions (Tier 1) auto-route here → Move to Tracker when ready to apply</li>
+                    <li><strong>Active Tracker:</strong> Track applications, outcomes, and follow-ups</li>
+                    <li><strong>Settings:</strong> Configure industries, salary thresholds, tech stack, and AI preferences</li>
+                </ol>
+            </div>
+            
+            <div style="margin-bottom: 24px;">
+                <h3 style="margin-bottom: 12px;">📊 Understanding Tiers</h3>
+                <ul style="line-height: 1.8; padding-left: 20px;">
+                    <li><strong>Tier 1 (⭐⭐⭐⭐⭐):</strong> Salary ≥$110K + Target Industry → Auto-routes to Job Leads</li>
+                    <li><strong>Tier 2 (⭐⭐⭐):</strong> Salary ≥$110K OR Target Industry → Stays in Inbox for review</li>
+                    <li><strong>Tier 3 (⭐):</strong> Below thresholds → Consider archiving</li>
+                </ul>
+            </div>
+            
+            <div style="margin-bottom: 24px;">
+                <h3 style="margin-bottom: 12px;">💡 Pro Tips</h3>
+                <ul style="line-height: 1.8; padding-left: 20px;">
+                    <li>Use <strong>Manual Entry</strong> for quick single job adds</li>
+                    <li>Use <strong>Batch Paste</strong> for analyzing multiple JDs at once</li>
+                    <li><strong>Export CSV</strong> regularly for backups (weekly recommended)</li>
+                    <li>Configure <strong>Settings → Industry Rankings</strong> to customize tier scoring</li>
+                    <li>Enable <strong>AI Analysis</strong> in Settings → API Configuration for smarter recommendations</li>
+                    <li>Check <strong>System Settings</strong> for auto-archive and language options</li>
+                </ul>
+            </div>
+            
+            <div style="padding: 16px; background: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px; margin-bottom: 20px;">
+                <p style="margin: 0; font-size: 13px; color: #856404;">
+                    <strong>💾 Backup Reminder:</strong> Your data is stored locally in your browser. Export backups regularly to avoid data loss!
+                </p>
+            </div>
+            
+            <div class="form-actions">
+                <button type="button" class="primary" onclick="closeHelpModal()">Got it!</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notes Edit Modal -->
+    <div id="notesModal" class="modal">
+        <div class="modal-content">
+            <h2>Edit Notes</h2>
+            <textarea id="notesTextarea" style="width: 100%; min-height: 150px;"></textarea>
+            <div class="form-actions">
+                <button type="button" onclick="closeNotesModal()">Cancel</button>
+                <button type="button" class="primary" onclick="saveNotesModal()">Save</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recommendations View Modal -->
+    <div id="recommendationsModal" class="modal">
+        <div class="modal-content">
+            <h2>AI Analysis</h2>
+            <div id="recommendationsContent" style="padding: 16px; background: #f9f9f9; border-radius: 6px;"></div>
+            <div class="form-actions">
+                <button type="button" onclick="closeAINotesModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Error Correction Modal -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <h2>Fix Extraction Errors</h2>
+            <div id="errorEntries"></div>
+            <div class="form-actions">
+                <button type="button" onclick="closeErrorModal()">Cancel</button>
+                <button type="button" class="primary" onclick="saveErrorCorrections()">Save & Continue</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add/Edit Modal -->
+    <div id="jobModal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">Add Job</h2>
+            <form id="jobForm" onsubmit="saveJob(event)">
+                <div class="form-group">
+                    <label>Company Name *</label>
+                    <input type="text" id="companyName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Position Title *</label>
+                    <input type="text" id="positionTitle" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Industry</label>
+                    <select id="industry">
+                        <option value="">Select...</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Banking">Banking</option>
+                        <option value="Gaming">Gaming</option>
+                        <option value="Datacenter">Datacenter</option>
+                        <option value="Utilities">Utilities</option>
+                        <option value="Hospitality">Hospitality</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Salary Range</label>
+                    <input type="text" id="salary" placeholder="e.g. $110K-$140K">
+                </div>
+                
+                <div class="form-group">
+                    <label>Job Link</label>
+                    <input type="url" id="jobLink">
+                </div>
+                
+                <div class="form-group">
+                    <label>Posted Date</label>
+                    <input type="text" id="postedDate" placeholder="e.g. 6 days ago">
+                </div>
+                
+                <div class="form-group">
+                    <label>Applied?</label>
+                    <select id="applied">
+                        <option value="N">No</option>
+                        <option value="Y">Yes</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Date Applied</label>
+                    <input type="date" id="dateApplied">
+                </div>
+                
+                <div class="form-group">
+                    <label>Notes</label>
+                    <textarea id="notes" placeholder="Skills required, contacts, observations..."></textarea>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        let jobs = [
+            {
+                id: 1,
+                company: "AXOS",
+                position: "IT Operations Manager",
+                industry: "Banking",
+                salary: "$110K-$140K",
+                link: "https://axos.wd5.myworkdayjobs.com/en-US/Axos/details/IT-Operations-Manager_JR3854",
+                posted: "30+ days",
+                applied: "Y",
+                dateApplied: "2026-02-09",
+                notes: ""
+            },
+            {
+                id: 2,
+                company: "Caesars Entertainment",
+                position: "IT Manager - Gaming Products",
+                industry: "Gaming",
+                salary: "",
+                link: "https://edmn.fa.us2.oraclecloud.com/hcmUI/CandidateExperience/en/sites/CX_1/job/78377",
+                posted: "22-Jan",
+                applied: "Y",
+                dateApplied: "2026-02-13",
+                notes: ""
+            }
+        ];
+        
+        let jobLeads = [];
+        let jdInbox = [];
+        let archive = [];
+        let searchLog = [];
+        let batchQueue = [];
+        let errorBatch = [];
+        let editingId = null;
+        
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const month = date.toLocaleDateString('en-US', { month: 'short' });
+            const day = date.getDate();
+            return `${month} ${day}`;
+        }
+        
+        function showBatchArea() {
+            const source = document.getElementById('jdSource').value;
+            document.getElementById('batchPasteArea').style.display = source ? 'block' : 'none';
+            document.getElementById('companySiteInput').style.display = source === 'Company Site' ? 'block' : 'none';
+        }
+        
+        function addToBatch() {
+            const text = document.getElementById('batchPasteBox').value.trim();
+            const notes = document.getElementById('batchNotes').value.trim();
+            
+            if (!text) {
+                alert('Paste area is empty');
+                return;
+            }
+            
+            batchQueue.push({ text, notes });
+            document.getElementById('batchPasteBox').value = '';
+            document.getElementById('batchNotes').value = '';
+            document.getElementById('batchPasteBox').focus();
+            document.getElementById('queueCounter').textContent = `${batchQueue.length} JDs queued`;
+        }
+        
+        function analyzeBatch() {
+            if (batchQueue.length === 0) {
+                alert('No JDs in queue');
+                return;
+            }
+            
+            const source = document.getElementById('jdSource').value;
+            const manualCompany = document.getElementById('manualCompanyName').value.trim();
+            errorBatch = [];
+            let processed = 0;
+            
+            batchQueue.forEach((item, index) => {
+                const { text, notes } = item;
+                let company = source === 'Company Site' && manualCompany ? manualCompany : extractCompany(text);
+                let title = extractTitle(text);
+                
+                if (!company || !title) {
+                    errorBatch.push({
+                        index,
+                        text,
+                        notes,
+                        company: company || '',
+                        title: title || '',
+                        missingCompany: !company,
+                        missingTitle: !title
+                    });
+                } else {
+                    processJD(text, notes, company, title, source);
+                    processed++;
+                }
+            });
+            
+            if (errorBatch.length > 0) {
+                showErrorModal();
+            } else {
+                finalizeBatch(processed, 0);
+            }
+        }
+        
+        function processJD(text, notes, company, title, source) {
+            const analysis = scoreJD(text, title);
+            
+            // Generate Recommendations
+            let recommendations = `Tier ${analysis.tier}`;
+            if (analysis.tier === 1) {
+                recommendations += `: Salary ≥$110K + ${analysis.industry}`;
+            } else if (analysis.tier === 2) {
+                if (analysis.salary) recommendations += `: Has salary range`;
+                if (analysis.industry) recommendations += analysis.salary ? ` OR ${analysis.industry}` : `: ${analysis.industry}`;
+            } else {
+                if (analysis.dealbreakers.length > 0) {
+                    recommendations += `: ${analysis.dealbreakers.join(', ')}`;
+                } else {
+                    recommendations += `: Low match`;
+                }
+            }
+            
+            const jdEntry = {
+                id: Date.now() + Math.random(),
+                date: new Date().toISOString(),
+                company,
+                title,
+                source,
+                text,
+                notes,
+                recommendations,
+                tier: analysis.tier,
+                rating: analysis.tier === 1 ? 5 : analysis.tier === 2 ? 3 : 1,
+                salary: analysis.salary,
+                industry: analysis.industry,
+                dealbreakers: analysis.dealbreakers,
+                selected: false,
+                qualifier: '',
+                status: analysis.tier === 1 ? 'Apply Now' : analysis.tier === 2 ? 'Research Needed' : 'Skip',
+                customStatus: ''
+            };
+            
+            jdInbox.push(jdEntry);
+            
+            if (analysis.tier === 1) {
+                jobLeads.push({ ...jdEntry, qualifier: 'Research Needed' });
+            }
+            
+            const status = analysis.tier === 1 ? 'Research — high match' : 
+                          analysis.tier === 2 ? 'Research — moderate match' : 
+                          'Skip — ' + (analysis.dealbreakers[0] || 'low match');
+            
+            searchLog.unshift({
+                date: jdEntry.date,
+                company,
+                title,
+                status
+            });
+        }
+        
+        function showErrorModal() {
+            const container = document.getElementById('errorEntries');
+            container.innerHTML = errorBatch.map((err, idx) => `
+                <div style="margin-bottom: 20px; padding: 16px; background: #f9f9f9; border-radius: 6px;">
+                    <h4 style="margin-bottom: 8px;">JD #${err.index + 1}</h4>
+                    <div style="margin-bottom: 12px;">
+                        <label>Company Name *</label>
+                        <input type="text" id="errCompany${idx}" value="${err.company}" placeholder="Enter company name" style="width: 100%;">
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                        <label>Job Title *</label>
+                        <input type="text" id="errTitle${idx}" value="${err.title}" placeholder="Enter job title" style="width: 100%;">
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('errorModal').classList.add('active');
+        }
+        
+        function closeErrorModal() {
+            document.getElementById('errorModal').classList.remove('active');
+            errorBatch = [];
+        }
+        
+        function saveErrorCorrections() {
+            const source = document.getElementById('jdSource').value;
+            let fixed = 0;
+            let skipped = 0;
+            
+            errorBatch.forEach((err, idx) => {
+                const company = document.getElementById(`errCompany${idx}`).value.trim();
+                const title = document.getElementById(`errTitle${idx}`).value.trim();
+                
+                if (company && title) {
+                    processJD(err.text, err.notes, company, title, source);
+                    fixed++;
+                } else {
+                    skipped++;
+                }
+            });
+            
+            closeErrorModal();
+            finalizeBatch(fixed, skipped);
+        }
+        
+        function finalizeBatch(processed, errors) {
+            alert(`Batch complete!\n${processed} processed\n${errors} skipped`);
+            
+            batchQueue = [];
+            document.getElementById('manualCompanyName').value = '';
+            document.getElementById('queueCounter').textContent = '0 JDs queued';
+            document.getElementById('errorReport').style.display = 'none';
+            
+            renderInbox();
+            renderLeads();
+            saveToLocalStorage();
+        }
+        
+        function extractCompany(text) {
+            const patterns = [
+                /(?:Company|Organization):\s*([A-Z][A-Za-z0-9\s&.,'-]+?)(?:\n|$)/i,
+                /^([A-Z][A-Za-z0-9\s&.,'-]+?)\s+(?:is hiring|seeks)/im,
+                /About\s+([A-Z][A-Za-z0-9\s&.,'-]+?)(?:\n|:)/i,
+            ];
+            
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match && match[1].length < 50) return match[1].trim();
+            }
+            return null;
+        }
+        
+        function extractTitle(text) {
+            const patterns = [
+                /(?:^|\n)((?:Senior |Sr\.? |Lead |Principal |Chief |Director of |Manager - )?(?:IT|Information Technology|Systems|Technology|Infrastructure|Operations|Director|Manager)\s+[A-Za-z\s\-&,]+?)(?:\n|$)/i,
+                /(?:Job Title|Position):\s*([A-Za-z\s\-&,]+?)(?:\n|$)/i,
+            ];
+            
+            for (const pattern of patterns) {
+                const match = text.match(pattern);
+                if (match && match[1].length < 100) return match[1].trim();
+            }
+            return null;
+        }
+        
+        function scoreJD(text, title) {
+            const textLower = (text + ' ' + title).toLowerCase();
+            const salaryMatch = text.match(/\$?\s*(\d{1,3})[kK]?\s*-?\s*\$?\s*(\d{1,3})[kK]/);
+            let minSalary = 0;
+            let salaryStr = '';
+            
+            if (salaryMatch) {
+                minSalary = parseInt(salaryMatch[1]) * 1000;
+                salaryStr = `$${salaryMatch[1]}K-$${salaryMatch[2]}K`;
+            }
+            
+            const dealbreakers = [];
+            if (textLower.includes('contract') || textLower.includes('hourly')) dealbreakers.push('contract');
+            if (textLower.includes('clearance') || textLower.includes('secret')) dealbreakers.push('clearance');
+            if (textLower.includes('relocation required')) dealbreakers.push('relocation');
+            if (minSalary > 0 && minSalary < 100000) dealbreakers.push('salary < $100K');
+            
+            let industry = '';
+            if (textLower.includes('datacenter') || textLower.includes('data center') || textLower.includes('colocation')) {
+                industry = 'Datacenter';
+            } else if (textLower.includes('gaming') || textLower.includes('casino') || textLower.includes('slot')) {
+                industry = 'Gaming';
+            } else if (textLower.includes('healthcare') || textLower.includes('hospital') || textLower.includes('hipaa')) {
+                industry = 'Healthcare';
+            } else if (textLower.includes('utility') || textLower.includes('energy')) {
+                industry = 'Utilities';
+            } else if (textLower.includes('bank') || textLower.includes('financial')) {
+                industry = 'Banking';
+            }
+            
+            let tier = 3;
+            if (dealbreakers.length === 0 && minSalary >= 110000 && ['Datacenter', 'Gaming', 'Healthcare'].includes(industry)) {
+                tier = 1;
+            } else if (minSalary >= 110000 || ['Datacenter', 'Gaming', 'Healthcare'].includes(industry)) {
+                tier = 2;
+            }
+            
+            return { tier, salary: salaryStr, industry, dealbreakers };
+        }
+        
+        function toggleSelectAllInbox() {
+            const checked = document.getElementById('selectAllInbox').checked;
+            jdInbox.forEach(jd => jd.selected = checked);
+            renderInbox();
+        }
+        
+        function toggleSelectAllTracker() {
+            const checked = document.getElementById('selectAllTracker').checked;
+            jobs.forEach(job => job.selected = checked);
+            renderJobs();
+        }
+        
+        function toggleSelectAllLeads() {
+            const checked = document.getElementById('selectAllLeads').checked;
+            jobLeads.forEach(lead => lead.selected = checked);
+            renderLeads();
+        }
+        
+        function toggleLeadsSelection(id) {
+            const lead = jobLeads.find(l => l.id === id);
+            if (lead) lead.selected = !lead.selected;
+        }
+        
+        function toggleSelectAllArchive() {
+            const checked = document.getElementById('selectAllArchive').checked;
+            archive.forEach(item => item.selected = checked);
+            renderArchive();
+        }
+        
+        function toggleArchiveSelection(id) {
+            const item = archive.find(a => a.id === id);
+            if (item) item.selected = !item.selected;
+        }
+        
+        function toggleTrackerSelection(id) {
+            const job = jobs.find(j => j.id === id);
+            if (job) job.selected = !job.selected;
+        }
+        
+        function archiveSelectedTracker() {
+            const selected = jobs.filter(job => job.selected);
+            if (selected.length === 0) {
+                alert('No jobs selected');
+                return;
+            }
+            
+            if (confirm(`Archive ${selected.length} job(s)?`)) {
+                selected.forEach(job => {
+                    archive.push({
+                        ...job,
+                        date: new Date().toISOString(),
+                        tier: job.rating || 0,
+                        rating: job.rating || 0,
+                        source: job.source || 'Active Tracker',
+                        text: '',
+                        recommendations: '',
+                        dealbreakers: []
+                    });
+                    jobs = jobs.filter(j => j.id !== job.id);
+                });
+                
+                renderJobs();
+                renderArchive();
+                saveToLocalStorage();
+            }
+        }
+        
+        function toggleInboxSelection(id) {
+            const jd = jdInbox.find(j => j.id === id);
+            if (jd) jd.selected = !jd.selected;
+        }
+        
+        function promoteSelected() {
+            const selected = jdInbox.filter(jd => jd.selected);
+            if (selected.length === 0) {
+                alert('No JDs selected');
+                return;
+            }
+            
+            selected.forEach(jd => {
+                if (!jobLeads.find(l => l.id === jd.id)) {
+                    jobLeads.push({ ...jd, qualifier: 'Research Needed' });
+                }
+                jdInbox = jdInbox.filter(j => j.id !== jd.id);
+            });
+            
+            alert(`${selected.length} JD(s) promoted to Job Leads`);
+            renderInbox();
+            renderLeads();
+            saveToLocalStorage();
+        }
+        
+        function archiveSelectedInbox() {
+            const selected = jdInbox.filter(jd => jd.selected);
+            if (selected.length === 0) {
+                alert('No JDs selected');
+                return;
+            }
+            
+            if (confirm(`Archive ${selected.length} JD(s)?`)) {
+                selected.forEach(jd => {
+                    archive.push(jd);
+                    jdInbox = jdInbox.filter(j => j.id !== jd.id);
+                    jobLeads = jobLeads.filter(l => l.id !== jd.id);
+                });
+                
+                renderInbox();
+                renderLeads();
+                renderArchive();
+                saveToLocalStorage();
+            }
+        }
+        
+        function autoArchiveOld() {
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            
+            const toArchive = jdInbox.filter(jd => new Date(jd.date) < thirtyDaysAgo);
+            toArchive.forEach(jd => {
+                archive.push(jd);
+                jdInbox = jdInbox.filter(j => j.id !== jd.id);
+            });
+            
+            if (toArchive.length > 0) {
+                renderInbox();
+                renderArchive();
+                saveToLocalStorage();
+            }
+        }
+        
+        function exportInboxCSV() {
+            const csv = [
+                ['Date', 'Company', 'Title', 'Source', 'Tier', 'Salary', 'Notes'],
+                ...jdInbox.map(j => [formatDate(j.date), j.company, j.title, j.source, j.tier, j.salary, j.notes])
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            
+            downloadCSV(csv, 'jd_inbox');
+        }
+        
+        function exportLeadsCSV() {
+            const csv = [
+                ['Date', 'Company', 'Title', 'Source', 'Tier', 'Salary', 'Status', 'Notes'],
+                ...jobLeads.map(l => [formatDate(l.date), l.company, l.title, l.source, l.tier, l.salary, l.status || l.qualifier, l.notes])
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            
+            downloadCSV(csv, 'job_leads');
+        }
+        
+        function moveLeadsToTracker() {
+            const selected = jobLeads.filter(lead => lead.selected);
+            if (selected.length === 0) {
+                alert('No leads selected');
+                return;
+            }
+            
+            if (confirm(`Move ${selected.length} lead(s) to Active Tracker?`)) {
+                selected.forEach(lead => {
+                    jobs.push({
+                        id: Math.max(...jobs.map(j => j.id), 0) + 1,
+                        company: lead.company,
+                        position: lead.title,
+                        industry: lead.industry || '',
+                        salary: lead.salary,
+                        link: '',
+                        posted: formatDate(lead.date),
+                        applied: 'N',
+                        dateApplied: '',
+                        notes: lead.notes,
+                        source: lead.source,
+                        rating: lead.rating,
+                        status: lead.status,
+                        customStatus: lead.customStatus,
+                        selected: false
+                    });
+                    jobLeads = jobLeads.filter(l => l.id !== lead.id);
+                });
+                
+                renderJobs();
+                renderLeads();
+                saveToLocalStorage();
+                alert(`${selected.length} lead(s) moved to Active Tracker`);
+            }
+        }
+        
+        function moveLeadsToArchive() {
+            const selected = jobLeads.filter(lead => lead.selected);
+            if (selected.length === 0) {
+                alert('No leads selected');
+                return;
+            }
+            
+            if (confirm(`Archive ${selected.length} lead(s)?`)) {
+                selected.forEach(lead => {
+                    archive.push(lead);
+                    jobLeads = jobLeads.filter(l => l.id !== lead.id);
+                });
+                
+                renderLeads();
+                renderArchive();
+                saveToLocalStorage();
+                alert(`${selected.length} lead(s) archived`);
+            }
+        }
+        
+        function importArchiveCSV() {
+            // Create hidden file input
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.csv';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                try {
+                    const text = await file.text();
+                    const lines = text.split('\n').filter(l => l.trim());
+                    
+                    if (lines.length < 2) {
+                        alert('CSV file is empty or invalid');
+                        return;
+                    }
+                    
+                    // Skip header row
+                    const dataLines = lines.slice(1);
+                    let imported = 0;
+                    let skipped = 0;
+                    
+                    dataLines.forEach(line => {
+                        // Parse CSV line (handle quoted fields)
+                        const fields = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g) || [];
+                        const cleanFields = fields.map(f => f.replace(/^"|"$/g, '').trim());
+                        
+                        if (cleanFields.length >= 5) {
+                            const [date, company, title, source, tier, notes = ''] = cleanFields;
+                            
+                            // Check if already exists
+                            const exists = archive.some(a => 
+                                a.company === company && 
+                                a.title === title && 
+                                a.date === date
+                            );
+                            
+                            if (!exists) {
+                                archive.push({
+                                    id: Math.max(...archive.map(a => a.id || 0), 0) + 1,
+                                    date: date,
+                                    company: company,
+                                    title: title,
+                                    source: source,
+                                    tier: parseInt(tier) || 3,
+                                    rating: parseInt(tier) === 1 ? 5 : parseInt(tier) === 2 ? 3 : 1,
+                                    notes: notes,
+                                    selected: false
+                                });
+                                imported++;
+                            } else {
+                                skipped++;
+                            }
+                        }
+                    });
+                    
+                    if (imported > 0) {
+                        renderArchive();
+                        saveToLocalStorage();
+                    }
+                    
+                    alert(`✅ Import complete!\n\nImported: ${imported}\nSkipped (duplicates): ${skipped}`);
+                    
+                } catch (error) {
+                    alert('Error importing CSV: ' + error.message);
+                    console.error('CSV import error:', error);
+                }
+            };
+            
+            input.click();
+        }
+        
+        function exportArchiveCSV() {
+            const csv = [
+                ['Date', 'Company', 'Title', 'Source', 'Tier', 'Notes'],
+                ...archive.map(j => [formatDate(j.date), j.company, j.title, j.source, j.tier, j.notes])
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            
+            downloadCSV(csv, 'archive');
+        }
+        
+        function moveArchiveToInbox() {
+            const selected = archive.filter(item => item.selected);
+            if (selected.length === 0) {
+                alert('No items selected');
+                return;
+            }
+            
+            if (confirm(`Move ${selected.length} item(s) to JD Inbox?`)) {
+                selected.forEach(item => {
+                    jdInbox.push({ ...item, selected: false });
+                    archive = archive.filter(a => a.id !== item.id);
+                });
+                
+                renderInbox();
+                renderArchive();
+                saveToLocalStorage();
+                alert(`${selected.length} item(s) moved to JD Inbox`);
+            }
+        }
+        
+        function moveArchiveToLeads() {
+            const selected = archive.filter(item => item.selected);
+            if (selected.length === 0) {
+                alert('No items selected');
+                return;
+            }
+            
+            if (confirm(`Move ${selected.length} item(s) to Job Leads?`)) {
+                selected.forEach(item => {
+                    jobLeads.push({ ...item, selected: false, qualifier: item.status || 'Research Needed' });
+                    archive = archive.filter(a => a.id !== item.id);
+                });
+                
+                renderLeads();
+                renderArchive();
+                saveToLocalStorage();
+                alert(`${selected.length} item(s) moved to Job Leads`);
+            }
+        }
+        
+        function moveArchiveToTracker() {
+            const selected = archive.filter(item => item.selected);
+            if (selected.length === 0) {
+                alert('No items selected');
+                return;
+            }
+            
+            if (confirm(`Move ${selected.length} item(s) to Active Tracker?`)) {
+                selected.forEach(item => {
+                    jobs.push({
+                        id: Math.max(...jobs.map(j => j.id), 0) + 1,
+                        company: item.company,
+                        position: item.title,
+                        industry: item.industry || '',
+                        salary: item.salary,
+                        link: '',
+                        posted: formatDate(item.date),
+                        applied: 'N',
+                        dateApplied: '',
+                        notes: item.notes,
+                        source: item.source,
+                        rating: item.rating,
+                        status: item.status,
+                        customStatus: item.customStatus,
+                        selected: false
+                    });
+                    archive = archive.filter(a => a.id !== item.id);
+                });
+                
+                renderJobs();
+                renderArchive();
+                saveToLocalStorage();
+                alert(`${selected.length} item(s) moved to Active Tracker`);
+            }
+        }
+        
+        function downloadCSV(csv, name) {
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}_${new Date().toISOString().split('T')[0]}.csv`;
+            a.click();
+        }
+        
+        function renderInbox() {
+            const tbody = document.getElementById('inboxBody');
+            if (jdInbox.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state">No JDs analyzed yet</div></td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = jdInbox.slice().reverse().map(jd => {
+                return `
+                <tr>
+                    <td><input type="checkbox" ${jd.selected ? 'checked' : ''} onchange="toggleInboxSelection(${jd.id})"></td>
+                    <td>${formatDate(jd.date)}</td>
+                    <td><span class="company-name">${jd.company}</span></td>
+                    <td>${jd.title}</td>
+                    <td>${jd.source}</td>
+                    <td><span class="star-rating">${'★'.repeat(jd.rating || jd.tier || 0)}${'☆'.repeat(5 - (jd.rating || jd.tier || 0))}</span></td>
+                    <td><span class="salary">${jd.salary || '-'}</span></td>
+                    <td>${renderStatusDropdown(jd, 'inbox')}</td>
+                    <td><button onclick="editInboxNotes(${jd.id})">Notes</button></td>
+                    <td><button onclick="viewAINotes(${jd.id})">Recommendations</button></td>
+                    <td>${jd.posted || '-'}</td>
+                    <td>
+                        <a href="#" onclick="viewJD(${jd.id}); return false;">View</a> |
+                        <a href="#" onclick="editJD(${jd.id}); return false;">Edit</a>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+        
+        function renderLeads() {
+            const tbody = document.getElementById('leadsBody');
+            if (jobLeads.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state">No leads yet</div></td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = jobLeads.map(lead => {
+                return `
+                <tr>
+                    <td><input type="checkbox" ${lead.selected ? 'checked' : ''} onchange="toggleLeadsSelection(${lead.id})"></td>
+                    <td>${formatDate(lead.date)}</td>
+                    <td><span class="company-name">${lead.company}</span></td>
+                    <td>${lead.title}</td>
+                    <td>${lead.source}</td>
+                    <td><span class="star-rating">${'★'.repeat(lead.rating || lead.tier || 0)}${'☆'.repeat(5 - (lead.rating || lead.tier || 0))}</span></td>
+                    <td><span class="salary">${lead.salary || '-'}</span></td>
+                    <td>${renderStatusDropdown(lead, 'leads')}</td>
+                    <td><button onclick="editLeadsNotes(${lead.id})">Notes</button></td>
+                    <td><button onclick="viewLeadsAINotes(${lead.id})">Recommendations</button></td>
+                    <td>${lead.posted || '-'}</td>
+                    <td>
+                        <a href="#" onclick="viewJD(${lead.id}); return false;">View</a> |
+                        <a href="#" onclick="editLeadJD(${lead.id}); return false;">Edit</a>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+        
+        function renderSearchLog() {
+            const tbody = document.getElementById('searchLogBody');
+            tbody.innerHTML = searchLog.map(entry => `
+                <tr>
+                    <td>${formatDate(entry.date)}</td>
+                    <td><span class="company-name">${entry.company}</span></td>
+                    <td>${entry.title}</td>
+                    <td><span class="badge status-${entry.status.toLowerCase().split(' ')[0]}">${entry.status}</span></td>
+                </tr>
+            `).join('');
+        }
+        
+        function renderArchive() {
+            const tbody = document.getElementById('archiveBody');
+            if (archive.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="12"><div class="empty-state">No archived JDs</div></td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = archive.map(jd => {
+                return `
+                <tr>
+                    <td><input type="checkbox" ${jd.selected ? 'checked' : ''} onchange="toggleArchiveSelection(${jd.id})"></td>
+                    <td>${formatDate(jd.date)}</td>
+                    <td><span class="company-name">${jd.company}</span></td>
+                    <td>${jd.title}</td>
+                    <td>${jd.source}</td>
+                    <td><span class="star-rating">${'★'.repeat(jd.rating || jd.tier || 0)}${'☆'.repeat(5 - (jd.rating || jd.tier || 0))}</span></td>
+                    <td><span class="salary">${jd.salary || '-'}</span></td>
+                    <td>${renderStatusDropdown(jd, 'archive')}</td>
+                    <td><button onclick="editArchiveNotes(${jd.id})">Notes</button></td>
+                    <td><button onclick="viewArchiveAINotes(${jd.id})">Recommendations</button></td>
+                    <td>${jd.posted || '-'}</td>
+                    <td>
+                        <a href="#" onclick="viewArchiveJD(${jd.id}); return false;">View</a> |
+                        <a href="#" onclick="editArchiveJD(${jd.id}); return false;">Edit</a>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+        }
+        
+        function updateQualifier(id, qualifier) {
+            const lead = jobLeads.find(l => l.id === id);
+            if (lead) {
+                lead.qualifier = qualifier;
+                saveToLocalStorage();
+            }
+        }
+        
+        function updateInboxQualifier(id, qualifier) {
+            const jd = jdInbox.find(j => j.id === id);
+            if (jd) {
+                jd.qualifier = qualifier;
+                saveToLocalStorage();
+            }
+        }
+        
+        function updateInboxNotes(id, notes) {
+            const jd = jdInbox.find(j => j.id === id);
+            if (jd) {
+                jd.notes = notes;
+                saveToLocalStorage();
+            }
+        }
+        
+        function updateOutcome(id, outcome) {
+            const job = jobs.find(j => j.id === id);
+            if (job) {
+                job.outcome = outcome;
+                renderJobs();
+                saveToLocalStorage();
+            }
+        }
+        
+        function renderStatusDropdown(item, itemType) {
+            const displayStatus = item.customStatus || item.status || '';
+            const isCustom = item.customStatus && item.customStatus.length > 0;
+            
+            return `
+                <select class="qualifier-select" onchange="updateStatus(${item.id}, this.value, '${itemType}')">
+                    <option value="">-</option>
+                    <option value="Skip" ${displayStatus === 'Skip' && !isCustom ? 'selected' : ''}>Skip</option>
+                    <option value="Research Needed" ${displayStatus === 'Research Needed' && !isCustom ? 'selected' : ''}>Research Needed</option>
+                    <option value="Apply Now" ${displayStatus === 'Apply Now' && !isCustom ? 'selected' : ''}>Apply Now</option>
+                    <option value="Hold" ${displayStatus === 'Hold' && !isCustom ? 'selected' : ''}>Hold</option>
+                    <option value="Backburner" ${displayStatus === 'Backburner' && !isCustom ? 'selected' : ''}>Backburner</option>
+                    <option value="Other" ${isCustom ? 'selected' : ''}>Other</option>
+                </select>
+                ${isCustom || (item.status === 'Other') ? `<input type="text" class="status-custom-input" value="${item.customStatus || ''}" onchange="updateCustomStatus(${item.id}, this.value, '${itemType}')" placeholder="Custom status...">` : ''}
+            `;
+        }
+        
+        function updateStatus(id, status, itemType) {
+            let item;
+            if (itemType === 'inbox') item = jdInbox.find(j => j.id === id);
+            else if (itemType === 'leads') item = jobLeads.find(l => l.id === id);
+            else if (itemType === 'tracker') item = jobs.find(j => j.id === id);
+            else if (itemType === 'archive') item = archive.find(a => a.id === id);
+            
+            if (item) {
+                if (status === 'Other') {
+                    item.status = 'Other';
+                } else {
+                    item.status = status;
+                    item.customStatus = '';
+                }
+                
+                if (itemType === 'inbox') renderInbox();
+                else if (itemType === 'leads') renderLeads();
+                else if (itemType === 'tracker') renderJobs();
+                else if (itemType === 'archive') renderArchive();
+                
+                saveToLocalStorage();
+            }
+        }
+        
+        function updateCustomStatus(id, customText, itemType) {
+            let item;
+            if (itemType === 'inbox') item = jdInbox.find(j => j.id === id);
+            else if (itemType === 'leads') item = jobLeads.find(l => l.id === id);
+            else if (itemType === 'tracker') item = jobs.find(j => j.id === id);
+            else if (itemType === 'archive') item = archive.find(a => a.id === id);
+            
+            if (item) {
+                item.customStatus = customText;
+                saveToLocalStorage();
+            }
+        }
+        
+        let currentEditingJDId = null;
+        
+        function editInboxNotes(id) {
+            currentEditingJDId = id;
+            const jd = jdInbox.find(j => j.id === id);
+            if (jd) {
+                document.getElementById('notesTextarea').value = jd.notes || '';
+                document.getElementById('notesModal').classList.add('active');
+            }
+        }
+        
+        function closeNotesModal() {
+            document.getElementById('notesModal').classList.remove('active');
+            currentEditingJDId = null;
+        }
+        
+        function saveNotesModal() {
+            if (currentEditingJDId) {
+                const notes = document.getElementById('notesTextarea').value;
+                updateInboxNotes(currentEditingJDId, notes);
+                renderInbox();
+            }
+            closeNotesModal();
+        }
+        
+        function viewAINotes(id) {
+            const jd = jdInbox.find(j => j.id === id);
+            if (jd) {
+                document.getElementById('recommendationsContent').innerHTML = `
+                    <p><strong>Company:</strong> ${jd.company}</p>
+                    <p><strong>Title:</strong> ${jd.title}</p>
+                    <p><strong>Tier:</strong> ${jd.tier}</p>
+                    <p><strong>Analysis:</strong> ${jd.recommendations || 'No analysis available'}</p>
+                `;
+                document.getElementById('recommendationsModal').classList.add('active');
+            }
+        }
+        
+        function closeAINotesModal() {
+            document.getElementById('recommendationsModal').classList.remove('active');
+        }
+        
+        function openSystemModal() {
+            // Load saved system settings
+            const savedSettings = localStorage.getItem('systemSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.querySelector(`input[name="language"][value="${settings.language || 'en'}"]`).checked = true;
+                document.getElementById('autoArchiveDays').value = settings.autoArchiveDays || 30;
+            }
+            document.getElementById('systemModal').classList.add('active');
+        }
+        
+        function closeSystemModal() {
+            document.getElementById('systemModal').classList.remove('active');
+        }
+        
+        function openImageUploadModal() {
+            document.getElementById('imageUploadModal').classList.add('active');
+        }
+        
+        function closeImageUploadModal() {
+            document.getElementById('imageUploadModal').classList.remove('active');
+        }
+        
+        function openManualEntryModal() {
+            document.getElementById('manualEntryModal').classList.add('active');
+        }
+        
+        function closeManualEntryModal() {
+            document.getElementById('manualEntryModal').classList.remove('active');
+            // Clear form
+            document.getElementById('manualCompany').value = '';
+            document.getElementById('manualTitle').value = '';
+            document.getElementById('manualSource').value = '';
+            document.getElementById('manualJD').value = '';
+            document.getElementById('manualNotes').value = '';
+        }
+        
+        function openHelpModal() {
+            document.getElementById('helpModal').classList.add('active');
+        }
+        
+        function closeHelpModal() {
+            document.getElementById('helpModal').classList.remove('active');
+        }
+        
+        function openPDFUploadModal() {
+            document.getElementById('pdfUploadModal').classList.add('active');
+        }
+        
+        function closePDFUploadModal() {
+            document.getElementById('pdfUploadModal').classList.remove('active');
+            document.getElementById('pdfFileInput').value = '';
+            document.getElementById('pdfProcessingStatus').style.display = 'none';
+        }
+        
+        async function processPDFUpload() {
+            const fileInput = document.getElementById('pdfFileInput');
+            const source = document.getElementById('pdfSource').value;
+            
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please select a PDF file');
+                return;
+            }
+            
+            if (!source) {
+                alert('Please select a source');
+                return;
+            }
+            
+            const file = fileInput.files[0];
+            
+            // Show processing status
+            document.getElementById('pdfProcessingStatus').style.display = 'block';
+            
+            try {
+                // Extract text from PDF
+                const text = await extractTextFromPDF(file);
+                
+                if (!text || text.trim().length < 50) {
+                    alert('Could not extract enough text from PDF. This might be a scanned PDF. Please try copy/paste instead.');
+                    document.getElementById('pdfProcessingStatus').style.display = 'none';
+                    return;
+                }
+                
+                // Try to extract company and title from text
+                const lines = text.split('\n').filter(l => l.trim().length > 0);
+                let company = 'Unknown';
+                let title = 'Unknown';
+                
+                // Simple heuristic: look for common patterns
+                for (let i = 0; i < Math.min(10, lines.length); i++) {
+                    const line = lines[i].trim();
+                    // Title often has "Manager", "Engineer", "Director" etc
+                    if (!title || title === 'Unknown') {
+                        if (line.match(/manager|engineer|director|specialist|analyst|coordinator|lead|senior|junior/i)) {
+                            title = line;
+                        }
+                    }
+                }
+                
+                // Analyze the JD
+                const analysis = scoreJD(text, title);
+                
+                const newJD = {
+                    id: Math.max(...jdInbox.map(j => j.id), 0) + 1,
+                    date: new Date().toISOString(),
+                    company: company,
+                    title: title,
+                    source: source,
+                    text: text,
+                    tier: analysis.tier,
+                    rating: analysis.tier === 1 ? 5 : analysis.tier === 2 ? 3 : 1,
+                    salary: analysis.salary,
+                    industry: analysis.industry,
+                    notes: `Uploaded from PDF: ${file.name}`,
+                    recommendations: analysis.reasoning,
+                    status: analysis.tier === 1 ? 'Apply Now' : analysis.tier === 2 ? 'Research Needed' : 'Skip',
+                    selected: false
+                };
+                
+                jdInbox.push(newJD);
+                renderInbox();
+                saveToLocalStorage();
+                closePDFUploadModal();
+                
+                alert(`✅ PDF processed!\n\nFound: ${title}\nTier: ${analysis.tier}\nSalary: ${analysis.salary || 'Not found'}\n\nCheck JD Inbox and update company/title if needed.`);
+                
+                // Switch to inbox tab
+                switchTab('inbox');
+                
+            } catch (error) {
+                console.error('PDF processing error:', error);
+                alert('Error processing PDF: ' + error.message);
+                document.getElementById('pdfProcessingStatus').style.display = 'none';
+            }
+        }
+        
+        async function extractTextFromPDF(file) {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    
+                    let fullText = '';
+                    
+                    // Extract text from all pages
+                    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+                        const page = await pdf.getPage(pageNum);
+                        const textContent = await page.getTextContent();
+                        
+                        // Combine text items
+                        const pageText = textContent.items
+                            .map(item => item.str)
+                            .join(' ');
+                        
+                        fullText += pageText + '\n';
+                    }
+                    
+                    resolve(fullText.trim());
+                } catch (error) {
+                    reject(error);
+                }
+            });
+        }
+        
+        function saveManualEntry() {
+            const company = document.getElementById('manualCompany').value.trim();
+            const title = document.getElementById('manualTitle').value.trim();
+            const source = document.getElementById('manualSource').value;
+            const jdText = document.getElementById('manualJD').value.trim();
+            const notes = document.getElementById('manualNotes').value.trim();
+            
+            if (!company || !title) {
+                alert('Please enter Company and Job Title');
+                return;
+            }
+            
+            // Create JD object
+            const analysis = scoreJD(jdText, title);
+            const newJD = {
+                id: Math.max(...jdInbox.map(j => j.id), 0) + 1,
+                date: new Date().toISOString(),
+                company: company,
+                title: title,
+                source: source || 'Manual Entry',
+                text: jdText,
+                tier: analysis.tier,
+                rating: analysis.tier === 1 ? 5 : analysis.tier === 2 ? 3 : 1,
+                salary: analysis.salary,
+                industry: analysis.industry,
+                notes: notes,
+                recommendations: analysis.reasoning,
+                status: analysis.tier === 1 ? 'Apply Now' : analysis.tier === 2 ? 'Research Needed' : 'Skip',
+                selected: false
+            };
+            
+            jdInbox.push(newJD);
+            renderInbox();
+            saveToLocalStorage();
+            closeManualEntryModal();
+            alert(`Added: ${company} - ${title}`);
+        }
+        
+        function saveSystemSettings() {
+            const settings = {
+                language: document.querySelector('input[name="language"]:checked').value,
+                autoArchiveDays: parseInt(document.getElementById('autoArchiveDays').value)
+            };
+            localStorage.setItem('systemSettings', JSON.stringify(settings));
+            alert('System settings saved!');
+            closeSystemModal();
+        }
+        
+        function exportAllData() {
+            const allData = {
+                jobs: jobs,
+                jobLeads: jobLeads,
+                jdInbox: jdInbox,
+                archive: archive,
+                searchLog: searchLog,
+                systemSettings: JSON.parse(localStorage.getItem('systemSettings') || '{}'),
+                apiSettings: JSON.parse(localStorage.getItem('apiSettings') || '{}'),
+                exportDate: new Date().toISOString()
+            };
+            
+            const dataStr = JSON.stringify(allData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `job-tracker-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+        
+        function importDataPrompt() {
+            alert('Import feature coming soon! For now, you can manually restore from JSON backup.');
+        }
+        
+        function confirmClearAll() {
+            if (confirm('⚠️ WARNING: This will delete ALL data including jobs, leads, and settings. This cannot be undone!\n\nAre you absolutely sure?')) {
+                if (confirm('Final confirmation: Delete everything?')) {
+                    localStorage.clear();
+                    alert('All data cleared. Page will reload.');
+                    location.reload();
+                }
+            }
+        }
+        
+        function openAPIModal() {
+            // Load saved settings if they exist
+            const savedSettings = localStorage.getItem('apiSettings');
+            if (savedSettings) {
+                const settings = JSON.parse(savedSettings);
+                document.getElementById('enableAI').checked = settings.enabled || false;
+                document.getElementById('apiKey').value = settings.apiKey || '';
+                document.getElementById('aiProvider').value = settings.provider || 'claude';
+            }
+            updateProviderInfo();
+            document.getElementById('apiModal').classList.add('active');
+        }
+        
+        function updateProviderInfo() {
+            const provider = document.getElementById('aiProvider').value;
+            const providerData = {
+                'claude': {
+                    name: 'Claude (Anthropic)',
+                    cost: '~$0.30/month for 200 JDs',
+                    credits: '$5 free credits',
+                    link: 'https://console.anthropic.com/',
+                    placeholder: 'sk-ant-...'
+                },
+                'gpt4': {
+                    name: 'GPT-4 (OpenAI)',
+                    cost: '~$0.60/month for 200 JDs',
+                    credits: '$5 free credits',
+                    link: 'https://platform.openai.com/',
+                    placeholder: 'sk-...'
+                },
+                'gemini': {
+                    name: 'Gemini (Google)',
+                    cost: 'Free tier available',
+                    credits: '1,500 requests/day free',
+                    link: 'https://ai.google.dev/',
+                    placeholder: 'Enter API key...'
+                },
+                'grok': {
+                    name: 'Grok (xAI)',
+                    cost: '~$5/month',
+                    credits: 'Limited free tier',
+                    link: 'https://x.ai/api',
+                    placeholder: 'xai-...'
+                },
+                'ollama': {
+                    name: 'Local Model (Ollama)',
+                    cost: 'Free (runs locally)',
+                    credits: 'No API costs',
+                    link: 'https://ollama.ai/',
+                    placeholder: 'Not required for local'
+                }
+            };
+            
+            const data = providerData[provider];
+            document.getElementById('providerLink').href = data.link;
+            document.getElementById('providerLink').textContent = data.link.replace('https://', '');
+            document.getElementById('costInfo').textContent = `💰 Cost: ${data.cost} • ${data.credits}`;
+            document.getElementById('apiKey').placeholder = data.placeholder;
+            
+            // Hide API key field for Ollama (local model)
+            document.getElementById('apiKeySection').style.display = provider === 'ollama' ? 'none' : 'block';
+        }
+        
+        function closeAPIModal() {
+            document.getElementById('apiModal').classList.remove('active');
+        }
+        
+        function saveAPISettings() {
+            const settings = {
+                enabled: document.getElementById('enableAI').checked,
+                provider: document.getElementById('aiProvider').value,
+                apiKey: document.getElementById('apiKey').value
+            };
+            localStorage.setItem('apiSettings', JSON.stringify(settings));
+            alert('API settings saved!');
+            closeAPIModal();
+        }
+        
+        function viewJD(id) {
+            const jd = jdInbox.find(j => j.id === id) || jobLeads.find(l => l.id === id);
+            if (jd) alert(`${jd.company} - ${jd.title}\n\n${jd.text.substring(0, 500)}...`);
+        }
+        
+        function editJD(id) {
+            const jd = jdInbox.find(j => j.id === id);
+            if (jd) {
+                currentEditingJDId = id;
+                document.getElementById('editCompany').value = jd.company;
+                document.getElementById('editTitle').value = jd.title;
+                document.getElementById('editSalary').value = jd.salary || '';
+                document.getElementById('editRating').value = jd.rating || jd.tier || 0;
+                document.getElementById('editJDModal').classList.add('active');
+            }
+        }
+        
+        function closeEditJDModal() {
+            document.getElementById('editJDModal').classList.remove('active');
+            currentEditingJDId = null;
+        }
+        
+        function saveEditJD() {
+            if (currentEditingJDId) {
+                const jd = jdInbox.find(j => j.id === currentEditingJDId);
+                if (jd) {
+                    jd.company = document.getElementById('editCompany').value;
+                    jd.title = document.getElementById('editTitle').value;
+                    jd.salary = document.getElementById('editSalary').value;
+                    jd.rating = parseInt(document.getElementById('editRating').value);
+                    
+                    renderInbox();
+                    saveToLocalStorage();
+                }
+            }
+            closeEditJDModal();
+        }
+        
+        function promoteToTracker(id) {
+            const lead = jobLeads.find(l => l.id === id);
+            if (lead && confirm(`Move "${lead.title}" to Active Tracker?`)) {
+                jobs.push({
+                    id: Math.max(...jobs.map(j => j.id), 0) + 1,
+                    company: lead.company,
+                    position: lead.title,
+                    industry: lead.industry,
+                    salary: lead.salary,
+                    link: '',
+                    posted: formatDate(lead.date),
+                    applied: 'N',
+                    dateApplied: '',
+                    notes: lead.notes
+                });
+                
+                jobLeads = jobLeads.filter(l => l.id !== id);
+                renderJobs();
+                renderLeads();
+                saveToLocalStorage();
+                alert('Moved to Active Tracker');
+            }
+        }
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(tab + 'Page').classList.add('active');
+        }
+        
+        function renderJobs(jobsToRender = jobs) {
+            const tbody = document.getElementById('jobsBody');
+            if (jobsToRender.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13"><div class="empty-state">No jobs found</div></td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = jobsToRender.map(job => {
+                const outcomeClass = job.outcome === 'Awaiting Response' ? 'outcome-awaiting' :
+                                    job.outcome === 'Interview Scheduled' ? 'outcome-interview' :
+                                    job.outcome === 'Declined' ? 'outcome-declined' : '';
+                
+                return `
+                <tr>
+                    <td><input type="checkbox" ${job.selected ? 'checked' : ''} onchange="toggleTrackerSelection(${job.id})"></td>
+                    <td>${job.dateApplied ? formatDate(job.dateApplied) : formatDate(new Date().toISOString())}</td>
+                    <td><span class="company-name">${job.company}</span></td>
+                    <td>${job.position}</td>
+                    <td>${job.source || '-'}</td>
+                    <td><span class="star-rating">${'★'.repeat(job.rating || 0)}${'☆'.repeat(5 - (job.rating || 0))}</span></td>
+                    <td><span class="salary">${job.salary || '-'}</span></td>
+                    <td>${renderStatusDropdown(job, 'tracker')}</td>
+                    <td>
+                        <select class="qualifier-select ${outcomeClass}" onchange="updateOutcome(${job.id}, this.value)">
+                            <option value="">-</option>
+                            <option value="Awaiting Response" ${job.outcome === 'Awaiting Response' ? 'selected' : ''}>Awaiting Response</option>
+                            <option value="Interview Scheduled" ${job.outcome === 'Interview Scheduled' ? 'selected' : ''}>Interview Scheduled</option>
+                            <option value="Declined" ${job.outcome === 'Declined' ? 'selected' : ''}>Declined</option>
+                        </select>
+                    </td>
+                    <td><button onclick="editTrackerNotes(${job.id})">Notes</button></td>
+                    <td><button onclick="viewTrackerAINotes(${job.id})">Recommendations</button></td>
+                    <td>${job.posted || '-'}</td>
+                    <td>
+                        <a href="#" onclick="viewTrackerJob(${job.id}); return false;">View</a> |
+                        <a href="#" onclick="editJob(${job.id}); return false;">Edit</a>
+                    </td>
+                </tr>
+                `;
+            }).join('');
+            
+            updateStats();
+        }
+        
+        function updateStats() {
+            document.getElementById('totalJobs').textContent = jobs.length;
+            document.getElementById('appliedJobs').textContent = jobs.filter(j => j.applied === 'Y').length;
+            document.getElementById('pendingJobs').textContent = jobs.filter(j => j.applied === 'N').length;
+        }
+        
+        function filterJobs() {
+            const industry = document.getElementById('industryFilter').value;
+            const status = document.getElementById('statusFilter').value;
+            const search = document.getElementById('searchBox').value.toLowerCase();
+            
+            let filtered = jobs;
+            if (industry) filtered = filtered.filter(j => j.industry === industry);
+            if (status === 'applied') filtered = filtered.filter(j => j.applied === 'Y');
+            else if (status === 'pending') filtered = filtered.filter(j => j.applied === 'N');
+            if (search) filtered = filtered.filter(j => 
+                j.company.toLowerCase().includes(search) ||
+                j.position.toLowerCase().includes(search) ||
+                (j.notes && j.notes.toLowerCase().includes(search))
+            );
+            
+            renderJobs(filtered);
+        }
+        
+        function openAddModal() {
+            editingId = null;
+            document.getElementById('modalTitle').textContent = 'Add Job';
+            document.getElementById('jobForm').reset();
+            document.getElementById('jobModal').classList.add('active');
+        }
+        
+        function editJob(id) {
+            editingId = id;
+            const job = jobs.find(j => j.id === id);
+            
+            document.getElementById('modalTitle').textContent = 'Edit Job';
+            document.getElementById('companyName').value = job.company;
+            document.getElementById('positionTitle').value = job.position;
+            document.getElementById('industry').value = job.industry;
+            document.getElementById('salary').value = job.salary;
+            document.getElementById('jobLink').value = job.link;
+            document.getElementById('postedDate').value = job.posted;
+            document.getElementById('applied').value = job.applied;
+            document.getElementById('dateApplied').value = job.dateApplied || '';
+            document.getElementById('notes').value = job.notes;
+            
+            document.getElementById('jobModal').classList.add('active');
+        }
+        
+        function closeModal() {
+            document.getElementById('jobModal').classList.remove('active');
+        }
+        
+        function saveJob(event) {
+            event.preventDefault();
+            
+            const jobData = {
+                company: document.getElementById('companyName').value,
+                position: document.getElementById('positionTitle').value,
+                industry: document.getElementById('industry').value,
+                salary: document.getElementById('salary').value,
+                link: document.getElementById('jobLink').value,
+                posted: document.getElementById('postedDate').value,
+                applied: document.getElementById('applied').value,
+                dateApplied: document.getElementById('dateApplied').value,
+                notes: document.getElementById('notes').value
+            };
+            
+            if (editingId) {
+                const index = jobs.findIndex(j => j.id === editingId);
+                jobs[index] = { ...jobs[index], ...jobData };
+            } else {
+                const newId = Math.max(...jobs.map(j => j.id), 0) + 1;
+                jobs.push({ id: newId, ...jobData });
+            }
+            
+            renderJobs();
+            closeModal();
+            saveToLocalStorage();
+        }
+        
+        function deleteJob(id) {
+            if (confirm('Delete this job?')) {
+                jobs = jobs.filter(j => j.id !== id);
+                renderJobs();
+                saveToLocalStorage();
+            }
+        }
+        
+        function exportData() {
+            const csv = [
+                ['Company', 'Position', 'Industry', 'Salary', 'Link', 'Posted', 'Applied', 'Date Applied', 'Notes'],
+                ...jobs.map(j => [j.company, j.position, j.industry, j.salary, j.link, j.posted, j.applied, j.dateApplied, j.notes])
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+            
+            downloadCSV(csv, 'job_tracker');
+        }
+        
+        function saveToLocalStorage() {
+            localStorage.setItem('frankJobTracker', JSON.stringify(jobs));
+            localStorage.setItem('frankJobLeads', JSON.stringify(jobLeads));
+            localStorage.setItem('frankJDInbox', JSON.stringify(jdInbox));
+            localStorage.setItem('frankArchive', JSON.stringify(archive));
+            localStorage.setItem('frankSearchLog', JSON.stringify(searchLog));
+        }
+        
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('frankJobTracker');
+            if (saved) jobs = JSON.parse(saved);
+            
+            const savedLeads = localStorage.getItem('frankJobLeads');
+            if (savedLeads) jobLeads = JSON.parse(savedLeads);
+            
+            const savedInbox = localStorage.getItem('frankJDInbox');
+            if (savedInbox) jdInbox = JSON.parse(savedInbox);
+            
+            const savedArchive = localStorage.getItem('frankArchive');
+            if (savedArchive) archive = JSON.parse(savedArchive);
+            
+            const savedLog = localStorage.getItem('frankSearchLog');
+            if (savedLog) searchLog = JSON.parse(savedLog);
+        }
+        
+        // Initialize
+        loadFromLocalStorage();
+        renderJobs();
+        renderLeads();
+        renderInbox();
+        renderArchive();
+        autoArchiveOld();
+        
+        // Settings page dropdown handler
+        const configSelector = document.getElementById('configTypeSelector');
+        if (configSelector) {
+            configSelector.addEventListener('change', function() {
+                // Hide all sections
+                document.getElementById('industryRankingsSection').style.display = 'none';
+                document.getElementById('companyRankingsSection').style.display = 'none';
+                document.getElementById('salarySection').style.display = 'none';
+                document.getElementById('locationSection').style.display = 'none';
+                document.getElementById('skillsSection').style.display = 'none';
+                document.getElementById('keywordsSection').style.display = 'none';
+                document.getElementById('otherSection').style.display = 'none';
+                
+                // Show selected section
+                const selected = this.value;
+                if (selected === 'industry') {
+                    document.getElementById('industryRankingsSection').style.display = 'block';
+                } else if (selected === 'company') {
+                    document.getElementById('companyRankingsSection').style.display = 'block';
+                } else if (selected === 'salary') {
+                    document.getElementById('salarySection').style.display = 'block';
+                } else if (selected === 'location') {
+                    document.getElementById('locationSection').style.display = 'block';
+                } else if (selected === 'skills') {
+                    document.getElementById('skillsSection').style.display = 'block';
+                } else if (selected === 'keywords') {
+                    document.getElementById('keywordsSection').style.display = 'block';
+                } else if (selected === 'other') {
+                    document.getElementById('otherSection').style.display = 'block';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
